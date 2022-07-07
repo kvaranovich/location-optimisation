@@ -1,0 +1,143 @@
+---
+title: "Results Analysis"
+output: html_notebook
+---
+
+# Libs
+
+```{r}
+library(tidyverse)
+library(jsonlite)
+```
+
+# Data Input
+
+```{r}
+PATHS <- list.files("../out/", full.names = TRUE)
+```
+
+```{r}
+results <- list()
+
+i <- 1
+for (p in PATHS) {
+  result <- fromJSON(p)
+  result[["final_nodes"]] <- paste(result[["final_nodes"]], collapse = ",")
+  result <- result %>% as.data.frame()
+  results[[i]] <- result
+  i <- i + 1
+}
+```
+
+```{r}
+results_df <- bind_rows(results)
+```
+
+# Visualisation
+
+## Iterative vs Hierarchical
+
+### Objective
+
+```{r}
+results_df %>% 
+  filter(
+    model %in% c("hier", "iter"),
+    ruin_random == 0.5,
+    r %in% c(300, 1200)
+  ) %>%
+  ggplot(aes(
+    x = p,
+    y = obj,
+    color = model
+  )) +
+  geom_line()
+```
+
+### Speed
+
+```{r}
+results_df %>% 
+  filter(
+    model %in% c("hier", "iter"),
+    ruin_random == 0.5,
+    r %in% c(300, 1200)
+  ) %>% 
+  ggplot(aes(
+    x = p,
+    y = t,
+    color = model
+  )) +
+  geom_line()
+```
+
+## p-MP vs Iterative
+
+### Objective
+
+```{r}
+results_df %>% 
+  mutate(
+    model_name = paste(
+      model, m, n, ruin_random
+    )
+  ) %>% 
+  filter(
+    (
+      model == "iter" &
+      ruin_random == 0.5 &
+      r == 300
+    ) |
+    (
+      model == "iter" &
+      ruin_random == 0.75 &
+      r == 300
+    ) |
+    (
+      model == "p_mp" &
+      m == 1000 &
+      n == 4000
+    )
+  ) %>%
+  ggplot(aes(
+    x = p,
+    y = obj,
+    color = model_name
+  )) +
+  geom_line()
+```
+
+### Speed
+
+```{r}
+results_df %>% 
+  mutate(
+    model_name = paste(
+      model, m, n, ruin_random
+    )
+  ) %>% 
+  filter(
+    (
+      model == "iter" &
+      ruin_random == 0.5 &
+      r == 300
+    ) |
+    (
+      model == "iter" &
+      ruin_random == 0.75 &
+      r == 300
+    ) |
+    (
+      model == "p_mp" &
+      m == 1000 &
+      n == 4000
+    )
+  ) %>%
+  ggplot(aes(
+    x = p,
+    y = t,
+    color = model_name
+  )) +
+  geom_line()
+```
+
